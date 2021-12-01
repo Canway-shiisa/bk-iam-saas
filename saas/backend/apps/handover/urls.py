@@ -13,5 +13,7 @@ from django.urls import path
 from . import views
 
 urlpatterns = [
-    path("", views.ActionViewSet.as_view({"post": "create"}), name="")
+    path("", views.HandOverViewSet.as_view({"post": "create"}), name="ss"),
+    path("records/", views.HandOverRecordsViewSet.as_view({"get": "list", "post": "create"}), name=""),
+    path("records/<int:id>/logs/", views.HandOverViewSet.as_view({"get": "retrieve"}), name="")
 ]

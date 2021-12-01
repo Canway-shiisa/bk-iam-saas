@@ -23,7 +23,7 @@ from backend.common.error_codes import error_codes
 from backend.common.swagger import ResponseSwaggerAutoSchema
 
 from .role_auth import ROLE_SESSION_KEY
-from .serializers import AccountRoleSLZ, AccountRoleSwitchSLZ, AccountUserSLZ
+from .serializers import AccountRoleSLZ, AccountRoleSwitchSLZ, AccountUserSLZ, AccountRoleMemberSLZ
 
 
 class UserViewSet(GenericViewSet):
@@ -59,7 +59,8 @@ class RoleViewSet(GenericViewSet):
         tags=["account"],
     )
     def list(self, request, *args, **kwargs):
-        data = self.role_biz.list_user_role(request.user.username)
+        # data = self.role_biz.list_user_role(request.user.username)
+        data = self.role_biz.list_user_role("admin")
         return Response([one.dict() for one in data])
 
     @swagger_auto_schema(
@@ -82,3 +83,21 @@ class RoleViewSet(GenericViewSet):
         request.session[ROLE_SESSION_KEY] = role_id
 
         return Response({})
+
+
+class RoleMemberViewSet(GenericViewSet):
+
+    paginator = None  # 去掉swagger中的limit offset参数
+
+    role_biz = RoleBiz()
+
+    @swagger_auto_schema(
+        operation_description="系统/超级 管理员角色列表",
+        auto_schema=ResponseSwaggerAutoSchema,
+        responses={status.HTTP_200_OK: AccountRoleMemberSLZ(label="角色成员", many=True)},
+        tags=["account"],
+    )
+    def list(self, request, *args, **kwargs):
+        # data = self.role_biz.list_user_role_members(request.user.username)
+        data = self.role_biz.list_user_role_members("chace")
+        return Response([one.dict() for one in data])

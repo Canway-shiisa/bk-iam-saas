@@ -51,6 +51,14 @@ class UserRole(BaseModel):
     type: str
     name: str
     name_en: str
+    description: str
+
+
+class UserRoleMember(BaseModel):
+    id: int
+    type: str
+    name: str
+    members: list
 
 
 class RoleInfo(BaseModel):
@@ -95,9 +103,29 @@ class RoleService:
         role_ids = RoleUser.objects.filter(username=user_id).values_list("role_id", flat=True)
         return self.list_by_ids(role_ids)
 
+    def list_user_role_members(self, user_id: str) -> List[UserRole]:
+        """查询用户的系统管理员、超级管理员角色成员"""
+        role_ids = RoleUser.objects.filter(username=user_id).values_list("role_id", flat=True)
+        roles = self.list_by_ids_and_types(role_ids)
+        data = []
+        for role in roles:
+            members = list(RoleUser.objects.filter(role_id=role.id).values_list("username", flat=True))
+            user_role_member = UserRoleMember(id=role.id, type=role.type, name=role.name, members=members)
+            data.append(user_role_member)
+
+        # 按超级管理员 - 系统管理员
+        sort_index = [RoleType.SUPER_MANAGER.value, RoleType.SYSTEM_MANAGER.value]
+        sorted_data = sorted(data, key=lambda r: sort_index.index(r.type))
+        return sorted_data
+
+    def list_by_ids_and_types(self, role_ids: List[int]) -> List[UserRole]:
+        roles = Role.objects.filter(id__in=role_ids, type__in=[RoleType.SUPER_MANAGER.value, RoleType.SYSTEM_MANAGER.value])
+        return roles
+
     def list_by_ids(self, role_ids: List[int]) -> List[UserRole]:
         roles = Role.objects.filter(id__in=role_ids)
-        data = [UserRole(id=role.id, type=role.type, name=role.name, name_en=role.name_en) for role in roles]
+        data = [UserRole(id=role.id, type=role.type, name=role.name, name_en=role.name_en,
+                         description=role.description) for role in roles]
 
         # 按超级管理员 - 系统管理员 - 分级管理员排序
         sort_index = [RoleType.SUPER_MANAGER.value, RoleType.SYSTEM_MANAGER.value, RoleType.RATING_MANAGER.value]
